@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: bank_server
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:bank_system}
+    username: ${DB_USER:bank_admin}
+    password: ${DB_PASSWORD:root_password}
+    driver-class-name: org.postgresql.Driver
+  sql:
+    init:
+      mode: never
+      encoding: UTF-8
+
+server:
+  port: ${SERVER_PORT:8080}
+  error:
+    # 调试阶段返回后端抛出的具体错误原因，便于前端快速定位问题
+    include-message: always
+    include-binding-errors: always
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

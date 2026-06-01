@@ -1,0 +1,27 @@
+services:
+  db:
+    # 推荐使用 alpine 版本，体积更小，启动更快
+    image: postgres:15-alpine
+    container_name: bank_postgres
+    restart: always
+    environment:
+      # 设置超级管理员账号
+      POSTGRES_USER: bank_admin
+      # 设置密码 (请在生产环境中替换为更安全的密码)
+      POSTGRES_PASSWORD: root_password
+      # 容器启动时自动创建的初始数据库名
+      POSTGRES_DB: bank_system
+      # 设定数据库时区，避免时间戳记录错误
+      TZ: Asia/Taipei
+    ports:
+      # 端口映射：宿主机端口:容器内端口
+      - "5432:5432"
+    volumes:
+      # 数据持久化：将容器内的数据映射到 Docker volume，防止容器销毁后数据丢失
+      - pg_data:/var/lib/postgresql/data
+      # (进阶功能) 将上一步设计的 SQL 建表脚本放入 init.sql，容器首次启动时会自动执行
+      # - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+
+volumes:
+  # 声明数据卷
+  pg_data:

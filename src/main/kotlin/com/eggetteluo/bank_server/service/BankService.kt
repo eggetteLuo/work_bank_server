@@ -20,6 +20,7 @@ import java.math.BigDecimal
 import java.sql.Timestamp
 import java.time.Instant
 import java.time.OffsetDateTime
+import java.util.Base64
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
@@ -47,12 +48,12 @@ class BankService(
         val userId = jdbcTemplate.queryForObject(
             """
             INSERT INTO bank_schema.user_info(user_name, id_card_enc, id_card_mask, phone, address)
-            VALUES (?, encode(convert_to(?, 'UTF8'), 'base64'), ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?)
             RETURNING user_id
             """.trimIndent(),
             Long::class.java,
             request.userName,
-            request.idCard,
+            encodeBase64(request.idCard),
             request.idCard,
             request.phone,
             request.address,
@@ -64,13 +65,13 @@ class BankService(
         jdbcTemplate.update(
             """
             INSERT INTO bank_schema.card_info(card_no, currency, deposit_id, open_amount, balance, withdraw_pwd_enc, is_lost, user_id)
-            VALUES (?, 'CNY', ?, ?, ?, encode(convert_to(?, 'UTF8'), 'base64'), FALSE, ?)
+            VALUES (?, 'CNY', ?, ?, ?, ?, FALSE, ?)
             """.trimIndent(),
             cardNo,
             request.depositId,
             request.openAmount,
             request.openAmount,
-            request.withdrawPassword,
+            encodeBase64(request.withdrawPassword),
             userId,
         )
 
@@ -92,11 +93,11 @@ class BankService(
             SELECT user_id
             FROM bank_schema.card_info
             WHERE card_no = ?
-              AND withdraw_pwd_enc = encode(convert_to(?, 'UTF8'), 'base64')
+              AND withdraw_pwd_enc = ?
             """.trimIndent(),
             { rs, _ -> rs.getLong("user_id") },
             cardNo,
-            password,
+            encodeBase64(password),
         ).firstOrNull() ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "银行卡号或密码错误")
 
         val token = UUID.randomUUID().toString().replace("-", "")
@@ -331,4 +332,7 @@ class BankService(
         val raw = e.rootCause?.message ?: e.message ?: "数据库操作失败"
         return raw.replace("ERROR:", "").trim()
     }
+
+    private fun encodeBase64(value: String): String =
+        Base64.getEncoder().encodeToString(value.toByteArray(Charsets.UTF_8))
 }

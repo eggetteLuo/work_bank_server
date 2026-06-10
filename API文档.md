@@ -6,12 +6,17 @@
 - 数据格式：`application/json`
 
 ## 2. 启动前置步骤
-1. 先在数据库执行以下 SQL：
-   - `sql/01_bootstrap.sql`（建库/用户/schema 示例）
+> 说明：项目使用 `org.opengauss:opengauss-jdbc:6.0.3` 连接 openGauss。该版本驱动仍沿用 PostgreSQL 兼容的 `jdbc:postgresql:` URL 前缀和 `org.postgresql.Driver` 类名，但实际数据库服务是 openGauss。
+
+1. 先启动 openGauss：
+   - `docker compose up -d`
+2. 使用 `bank_admin` 连接到 `bank_system` 数据库后执行以下 SQL：
    - `src/main/resources/schema.sql`（建表、约束、视图、触发器、函数）
    - `src/main/resources/data.sql`（测试数据）
-2. 启动后端：
+3. 启动后端：
    - `./gradlew bootRun`
+
+如果不使用 Docker，可参考 `sql/01_bootstrap.sql` 手动创建 `bank_system`、`bank_admin` 和 `bank_schema`。
 
 ## 3. 登录与鉴权说明
 - 登录方式：银行卡号 + 6位密码。
@@ -243,4 +248,3 @@ curl -X GET 'http://localhost:8080/api/stats/no-trade-accounts'
 - `卡号不存在`
 - `余额不足`
 - `挂失账户不可转账`
-

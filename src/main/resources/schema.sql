@@ -8,7 +8,7 @@ SET search_path TO bank_schema, public;
 
 DROP VIEW IF EXISTS bank_schema.v_card_info_zh;
 DROP VIEW IF EXISTS bank_schema.v_user_info_zh;
-DROP FUNCTION IF EXISTS bank_schema.fn_print_statement(VARCHAR, TIMESTAMPTZ, TIMESTAMPTZ);
+DROP FUNCTION IF EXISTS bank_schema.fn_print_statement(VARCHAR, TIMESTAMP WITH TIME ZONE, TIMESTAMP WITH TIME ZONE);
 DROP FUNCTION IF EXISTS bank_schema.fn_transfer(VARCHAR, VARCHAR, NUMERIC, VARCHAR);
 DROP FUNCTION IF EXISTS bank_schema.fn_deposit_or_withdraw(VARCHAR, VARCHAR, NUMERIC, VARCHAR);
 DROP FUNCTION IF EXISTS bank_schema.fn_generate_card_no();

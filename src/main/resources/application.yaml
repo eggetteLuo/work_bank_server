@@ -2,9 +2,10 @@ spring:
   application:
     name: bank_server
   datasource:
+    # openGauss 6.x JDBC keeps the PostgreSQL-compatible URL and driver class names.
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:bank_system}
     username: ${DB_USER:bank_admin}
-    password: ${DB_PASSWORD:root_password}
+    password: ${DB_PASSWORD:Gauss@123}
     driver-class-name: org.postgresql.Driver
   sql:
     init:

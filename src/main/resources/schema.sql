@@ -12,6 +12,18 @@ DROP FUNCTION IF EXISTS bank_schema.fn_print_statement(VARCHAR, TIMESTAMP WITH T
 DROP FUNCTION IF EXISTS bank_schema.fn_transfer(VARCHAR, VARCHAR, NUMERIC, VARCHAR);
 DROP FUNCTION IF EXISTS bank_schema.fn_deposit_or_withdraw(VARCHAR, VARCHAR, NUMERIC, VARCHAR);
 DROP FUNCTION IF EXISTS bank_schema.fn_generate_card_no();
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM pg_class c
+        JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE n.nspname = 'bank_schema'
+          AND c.relname = 'trade_info'
+    ) THEN
+        DROP TRIGGER IF EXISTS trg_trade_apply ON bank_schema.trade_info;
+    END IF;
+END $$;
 DROP FUNCTION IF EXISTS bank_schema.trg_apply_trade();
 DROP TABLE IF EXISTS bank_schema.trade_info;
 DROP TABLE IF EXISTS bank_schema.card_info;

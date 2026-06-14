@@ -8,15 +8,69 @@
 ## 2. 启动前置步骤
 > 说明：项目使用 `org.opengauss:opengauss-jdbc:6.0.3` 连接 openGauss。该版本驱动仍沿用 PostgreSQL 兼容的 `jdbc:postgresql:` URL 前缀和 `org.postgresql.Driver` 类名，但实际数据库服务是 openGauss。
 
-1. 先启动 openGauss：
-   - `docker compose up -d`
-2. 使用 `bank_admin` 连接到 `bank_system` 数据库后执行以下 SQL：
-   - `src/main/resources/schema.sql`（建表、约束、视图、触发器、函数）
-   - `src/main/resources/data.sql`（测试数据）
+### macOS / Linux
+1. 启动 openGauss：
+```bash
+docker compose up -d
+```
+
+2. 初始化数据库表和测试数据：
+```bash
+bash scripts/init-db.sh
+```
+
 3. 启动后端：
-   - `./gradlew bootRun`
+```bash
+./gradlew bootRun
+```
+
+### Windows PowerShell
+1. 启动 openGauss：
+```powershell
+docker compose up -d
+```
+
+2. 初始化数据库表和测试数据：
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/init-db.ps1
+```
+
+3. 启动后端：
+```powershell
+.\gradlew.bat bootRun
+```
+
+### 常用检查命令
+```bash
+docker compose ps
+docker compose logs -f db
+```
+
+如果 `docker compose ps` 中容器是 `Up` 但没有看到 `127.0.0.1:5432->5432/tcp`，执行：
+```bash
+docker compose up -d --force-recreate
+```
+
+如果本机 `5432` 端口被占用，可改用其他宿主机端口，例如 `55432`：
+```bash
+DB_PORT=55432 docker compose up -d
+DB_PORT=55432 ./gradlew bootRun
+```
+
+Windows PowerShell 写法：
+```powershell
+$env:DB_PORT="55432"
+docker compose up -d
+.\gradlew.bat bootRun
+```
 
 如果不使用 Docker，可参考 `sql/01_bootstrap.sql` 手动创建 `bank_system`、`bank_admin` 和 `bank_schema`。
+
+默认数据库连接信息：
+- 地址：`localhost:5432`
+- 数据库：`bank_system`
+- 用户名：`bank_admin`
+- 密码：`Gauss@123`
 
 ## 3. 登录与鉴权说明
 - 登录方式：银行卡号 + 6位密码。

@@ -1,23 +1,33 @@
 services:
   db:
-    image: opengauss/opengauss-server:latest
+    image: ${OPENGAUSS_IMAGE:-opengauss/opengauss-server:latest}
     container_name: bank_opengauss
     restart: always
     privileged: true
     environment:
-      # openGauss 默认管理员用户为 gaussdb
-      GS_PASSWORD: Gauss@123
-      GS_DB: bank_system
-      GS_USERNAME: bank_admin
+      # 密码必须至少8位，并同时包含大小写字母、数字、特殊字符
+      GS_PASSWORD: ${DB_PASSWORD:-Gauss@123}
+      GS_DB: ${DB_NAME:-bank_system}
+      GS_USERNAME: ${DB_USER:-bank_admin}
       OTHER_PG_CONF: |
         use_workload_manager = off
       TZ: Asia/Shanghai
     ports:
-      # 端口映射：宿主机端口:容器内端口
-      - "5432:5432"
+      # 默认只暴露到本机，Windows/macOS/Linux 均可通过 localhost 访问
+      - "${DB_HOST_BIND:-127.0.0.1}:${DB_PORT:-5432}:5432"
     volumes:
       # 数据持久化：将容器内的数据映射到 Docker volume，防止容器销毁后数据丢失
       - opengauss_data:/var/lib/opengauss/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "LD_LIBRARY_PATH=/usr/local/opengauss/lib:/scws/lib /usr/local/opengauss/bin/gsql -U $${GS_USERNAME} -W $${GS_PASSWORD} -d $${GS_DB} -c 'SELECT 1;' >/dev/null 2>&1"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
 
 volumes:
   # 声明数据卷

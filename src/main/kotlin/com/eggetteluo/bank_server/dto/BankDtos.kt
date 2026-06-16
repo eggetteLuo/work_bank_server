@@ -23,7 +23,7 @@ data class OpenAccountRequest(
     val withdrawPassword: String,
     // 兼容前端可能传入的字段名 deposit_type_id
     @JsonAlias("deposit_type_id")
-    val depositId: Long = 1,
+    val depositId: Long? = null,
 )
 
 data class OpenAccountResponse(

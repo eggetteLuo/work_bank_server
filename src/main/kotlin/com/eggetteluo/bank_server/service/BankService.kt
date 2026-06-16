@@ -40,6 +40,7 @@ class BankService(
     @Transactional
     fun openAccount(request: OpenAccountRequest): OpenAccountResponse {
         validateBasic(request.idCard, request.phone, request.withdrawPassword, request.openAmount)
+        val depositId = request.depositId ?: 1L
 
         if (jdbcTemplate.queryForObject("SELECT COUNT(1) FROM bank_schema.user_info WHERE phone = ?", Long::class.java, request.phone)!! > 0L) {
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "联系电话已存在")
@@ -68,7 +69,7 @@ class BankService(
             VALUES (?, 'CNY', ?, ?, ?, ?, FALSE, ?)
             """.trimIndent(),
             cardNo,
-            request.depositId,
+            depositId,
             request.openAmount,
             request.openAmount,
             encodeBase64(request.withdrawPassword),

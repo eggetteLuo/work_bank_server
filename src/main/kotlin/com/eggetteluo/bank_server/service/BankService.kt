@@ -13,6 +13,7 @@ import com.eggetteluo.bank_server.dto.TransferRequest
 import org.springframework.dao.DataAccessException
 import org.springframework.http.HttpStatus
 import org.springframework.jdbc.core.JdbcTemplate
+import org.springframework.jdbc.core.queryForObject
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.server.ResponseStatusException
@@ -42,17 +43,20 @@ class BankService(
         validateBasic(request.idCard, request.phone, request.withdrawPassword, request.openAmount)
         val depositId = request.depositId ?: 1L
 
-        if (jdbcTemplate.queryForObject("SELECT COUNT(1) FROM bank_schema.user_info WHERE phone = ?", Long::class.java, request.phone)!! > 0L) {
+        if (jdbcTemplate.queryForObject<Long>(
+                "SELECT COUNT(1) FROM bank_schema.user_info WHERE phone = ?",
+                request.phone
+            )!! > 0L
+        ) {
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "联系电话已存在")
         }
 
-        val userId = jdbcTemplate.queryForObject(
+        val userId = jdbcTemplate.queryForObject<Long>(
             """
             INSERT INTO bank_schema.user_info(user_name, id_card_enc, id_card_mask, phone, address)
             VALUES (?, ?, ?, ?, ?)
             RETURNING user_id
             """.trimIndent(),
-            Long::class.java,
             request.userName,
             encodeBase64(request.idCard),
             request.idCard,
@@ -60,7 +64,7 @@ class BankService(
             request.address,
         ) ?: throw ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "开户失败")
 
-        val cardNo = jdbcTemplate.queryForObject("SELECT bank_schema.fn_generate_card_no()", String::class.java)
+        val cardNo = jdbcTemplate.queryForObject<String>("SELECT bank_schema.fn_generate_card_no()")
             ?: throw ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "生成卡号失败")
 
         jdbcTemplate.update(
@@ -132,9 +136,8 @@ class BankService(
         assertOwner(session.userId, request.fromCardNo)
         validateAmount(request.amount)
         return try {
-            jdbcTemplate.queryForObject(
+            jdbcTemplate.queryForObject<String>(
                 "SELECT bank_schema.fn_transfer(?, ?, ?, ?)",
-                String::class.java,
                 request.fromCardNo,
                 request.toCardNo,
                 request.amount,
@@ -197,7 +200,12 @@ class BankService(
         )
     }
 
-    fun printStatement(authorization: String?, cardNo: String, start: OffsetDateTime, end: OffsetDateTime): List<TradeRecordView> {
+    fun printStatement(
+        authorization: String?,
+        cardNo: String,
+        start: OffsetDateTime,
+        end: OffsetDateTime
+    ): List<TradeRecordView> {
         val session = requireSession(authorization)
         assertOwner(session.userId, cardNo)
         return try {
@@ -257,22 +265,20 @@ class BankService(
             )
             ORDER BY c.card_no
             """.trimIndent(),
-            { rs, _ ->
-                NoTradeAccountView(
-                    cardNo = rs.getString("card_no"),
-                    userName = rs.getString("user_name"),
-                    phone = rs.getString("phone"),
-                    balance = rs.getBigDecimal("balance"),
-                )
-            },
-        )
+        ) { rs, _ ->
+            NoTradeAccountView(
+                cardNo = rs.getString("card_no"),
+                userName = rs.getString("user_name"),
+                phone = rs.getString("phone"),
+                balance = rs.getBigDecimal("balance"),
+            )
+        }
     }
 
     private fun callDepositOrWithdraw(cardNo: String, type: String, amount: BigDecimal, remark: String?): Long {
         return try {
-            jdbcTemplate.queryForObject(
+            jdbcTemplate.queryForObject<Long>(
                 "SELECT bank_schema.fn_deposit_or_withdraw(?, ?, ?, ?)",
-                Long::class.java,
                 cardNo,
                 type,
                 amount,
@@ -318,9 +324,8 @@ class BankService(
     }
 
     private fun assertOwner(userId: Long, cardNo: String) {
-        val count = jdbcTemplate.queryForObject(
+        val count = jdbcTemplate.queryForObject<Long>(
             "SELECT COUNT(1) FROM bank_schema.card_info WHERE card_no = ? AND user_id = ?",
-            Long::class.java,
             cardNo,
             userId,
         ) ?: 0L
